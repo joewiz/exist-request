@@ -1,0 +1,131 @@
+# This workflow builds a xar archive, deploys it into exist and runs a smoke test.
+
+name: exist-db CI
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+       fail-fast: false
+       matrix:
+         exist-version: [latest]
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # Build with Maven
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      # Extract exist-core JAR from Docker image for compilation,
+      # since the published 7.0.0-SNAPSHOT in the Maven repo is stale.
+      - name: Pull eXist-db image
+        run: docker pull existdb/existdb:${{ matrix.exist-version }}
+
+      - name: Install exist-core from Docker image into local Maven repo
+        run: |
+          id=$(docker create existdb/existdb:${{ matrix.exist-version }})
+          docker cp "$id:/exist/lib/exist.uber.jar" /tmp/exist.uber.jar
+          docker rm "$id"
+          mvn install:install-file -Dfile=/tmp/exist.uber.jar \
+            -DgroupId=org.exist-db -DartifactId=exist-core \
+            -Dversion=7.0.0-SNAPSHOT -Dpackaging=jar -q
+
+      - name: Build with Maven
+        run: mvn clean package -DskipTests -q
+
+      # Deploy XAR in Container
+      - name: Start eXist-db container
+        run: |
+          docker run -dit -p 8080:8080 \
+          -v ${{ github.workspace }}/target:/exist/autodeploy \
+          --name exist --rm --health-interval=1s --health-start-period=1s \
+          existdb/existdb:${{ matrix.exist-version }}
+
+      - name: Wait for eXist-db to start and deploy packages
+        timeout-minutes: 5
+        run: |
+          while ! docker logs exist 2>&1 | grep -q "Server has started"; \
+          do sleep 6s; \
+          done
+          echo "Server started, waiting for autodeploy..."
+          sleep 15
+          echo "=== eXist-db logs (tail) ==="
+          docker logs exist 2>&1 | tail -15
+
+      - name: Check XAR is installed
+        run: |
+          result=$(curl -s -u admin: -H "Content-Type: application/xml" --data '
+          <query xmlns="http://exist.sourceforge.net/NS/exist">
+            <text><![CDATA[
+              import module namespace exrequest = "http://exquery.org/ns/request";
+              "request module loaded"
+            ]]></text>
+          </query>' "http://localhost:8080/exist/rest/db")
+          echo "$result"
+          echo "$result" | grep -q "request module loaded" || (echo "FAIL: request module not loaded" && exit 1)
+
+      # Smoke tests: verify functions work
+      - name: Test exrequest:method returns GET
+        run: |
+          result=$(curl -sf -u admin: \
+            'http://localhost:8080/exist/rest/db?_query=import%20module%20namespace%20exrequest%20%3D%20%22http%3A%2F%2Fexquery.org%2Fns%2Frequest%22%3B%20exrequest%3Amethod()&_wrap=no')
+          echo "$result"
+          echo "$result" | grep -q "GET" || (echo "FAIL: expected GET" && exit 1)
+
+      - name: Test exrequest:scheme returns http
+        run: |
+          result=$(curl -sf -u admin: \
+            'http://localhost:8080/exist/rest/db?_query=import%20module%20namespace%20exrequest%20%3D%20%22http%3A%2F%2Fexquery.org%2Fns%2Frequest%22%3B%20exrequest%3Ascheme()&_wrap=no')
+          echo "$result"
+          echo "$result" | grep -q "http" || (echo "FAIL: expected http" && exit 1)
+
+      - name: Test exrequest:parameter with default value
+        run: |
+          result=$(curl -sf -u admin: \
+            'http://localhost:8080/exist/rest/db?_query=import%20module%20namespace%20exrequest%20%3D%20%22http%3A%2F%2Fexquery.org%2Fns%2Frequest%22%3B%20exrequest%3Aparameter(%22missing%22%2C%20%22fallback%22)&_wrap=no')
+          echo "$result"
+          echo "$result" | grep -q "fallback" || (echo "FAIL: expected fallback" && exit 1)
+
+      - name: Test exrequest:header-names returns non-empty sequence
+        run: |
+          result=$(curl -sf -u admin: -H "Content-Type: application/xml" --data '
+          <query xmlns="http://exist.sourceforge.net/NS/exist">
+            <text><![CDATA[
+              import module namespace exrequest = "http://exquery.org/ns/request";
+              count(exrequest:header-names()) > 0
+            ]]></text>
+          </query>' "http://localhost:8080/exist/rest/db")
+          echo "$result"
+          echo "$result" | grep -q "true" || (echo "FAIL: expected non-empty header names" && exit 1)
+
+      - name: Test exrequest:set-attribute and exrequest:attribute round-trip
+        run: |
+          result=$(curl -sf -u admin: -H "Content-Type: application/xml" --data '
+          <query xmlns="http://exist.sourceforge.net/NS/exist">
+            <text><![CDATA[
+              import module namespace exrequest = "http://exquery.org/ns/request";
+              let $_ := exrequest:set-attribute("test-key", "test-value")
+              return exrequest:attribute("test-key")
+            ]]></text>
+          </query>' "http://localhost:8080/exist/rest/db")
+          echo "$result"
+          echo "$result" | grep -q "test-value" || (echo "FAIL: expected test-value" && exit 1)
+
+      - name: Test exrequest:parameter-map returns a map
+        run: |
+          result=$(curl -sf -u admin: -H "Content-Type: application/xml" --data '
+          <query xmlns="http://exist.sourceforge.net/NS/exist">
+            <text><![CDATA[
+              import module namespace exrequest = "http://exquery.org/ns/request";
+              exrequest:parameter-map() instance of map(*)
+            ]]></text>
+          </query>' "http://localhost:8080/exist/rest/db")
+          echo "$result"
+          echo "$result" | grep -q "true" || (echo "FAIL: expected map instance" && exit 1)
