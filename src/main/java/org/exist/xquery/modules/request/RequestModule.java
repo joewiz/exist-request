@@ -46,7 +46,7 @@ public class RequestModule extends AbstractInternalModule {
 
     public static final String NAMESPACE_URI = "http://exquery.org/ns/request";
 
-    public static final String PREFIX = "request";
+    public static final String PREFIX = "exrequest";
 
     public static final String RELEASE = "1.0.0";
 
@@ -71,27 +71,35 @@ public class RequestModule extends AbstractInternalModule {
                     ConnectionFunctions.FS_REMOTE_HOSTNAME,
                     ConnectionFunctions.FS_REMOTE_ADDRESS,
                     ConnectionFunctions.FS_REMOTE_PORT),
+            // ParameterFunctions — split because FS_PARAMETER is FunctionSignature[]
             functionDefs(ParameterFunctions.class,
                     ParameterFunctions.FS_PARAMETER_NAMES,
-                    ParameterFunctions.FS_PARAMETER,
                     ParameterFunctions.FS_PARAMETER_MAP),
+            functionDefs(ParameterFunctions.class,
+                    ParameterFunctions.FS_PARAMETER),
+            // HeaderFunctions — split because FS_HEADER is FunctionSignature[]
             functionDefs(HeaderFunctions.class,
                     HeaderFunctions.FS_HEADER_NAMES,
-                    HeaderFunctions.FS_HEADER,
                     HeaderFunctions.FS_HEADER_MAP),
+            functionDefs(HeaderFunctions.class,
+                    HeaderFunctions.FS_HEADER),
+            // CookieFunctions — split because FS_COOKIE is FunctionSignature[]
             functionDefs(CookieFunctions.class,
-                    CookieFunctions.FS_COOKIE,
                     CookieFunctions.FS_COOKIE_NAMES,
                     CookieFunctions.FS_COOKIE_MAP),
+            functionDefs(CookieFunctions.class,
+                    CookieFunctions.FS_COOKIE),
+            // AttributeFunctions — split because FS_ATTRIBUTE is FunctionSignature[]
             functionDefs(AttributeFunctions.class,
-                    AttributeFunctions.FS_ATTRIBUTE,
                     AttributeFunctions.FS_ATTRIBUTE_NAMES,
                     AttributeFunctions.FS_ATTRIBUTE_MAP,
-                    AttributeFunctions.FS_SET_ATTRIBUTE)
+                    AttributeFunctions.FS_SET_ATTRIBUTE),
+            functionDefs(AttributeFunctions.class,
+                    AttributeFunctions.FS_ATTRIBUTE)
     );
 
     public RequestModule(final Map<String, List<?>> parameters) {
-        super(functions, parameters, true);
+        super(functions, parameters, false);
     }
 
     @Override

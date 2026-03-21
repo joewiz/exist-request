@@ -25,6 +25,7 @@ import org.exist.http.servlets.RequestWrapper;
 import org.exist.xquery.FunctionSignature;
 import org.exist.xquery.XPathException;
 import org.exist.xquery.XQueryContext;
+import org.exist.xquery.functions.map.MapType;
 import org.exist.xquery.value.*;
 
 import javax.annotation.Nonnull;
@@ -65,7 +66,7 @@ public class HeaderFunctions extends AbstractRequestFunction {
             RequestModule.qname(FS_HEADER_MAP_NAME),
             "Returns all HTTP headers as a map. Each key is a header name, " +
             "each value is the header value string.",
-            returns(Type.MAP, "a map of header names to values")
+            returns(Type.MAP_ITEM, "a map of header names to values")
     );
 
     public HeaderFunctions(final XQueryContext context, final FunctionSignature signature) {

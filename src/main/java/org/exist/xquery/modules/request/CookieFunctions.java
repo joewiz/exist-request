@@ -26,6 +26,7 @@ import org.exist.http.servlets.RequestWrapper;
 import org.exist.xquery.FunctionSignature;
 import org.exist.xquery.XPathException;
 import org.exist.xquery.XQueryContext;
+import org.exist.xquery.functions.map.MapType;
 import org.exist.xquery.value.*;
 
 import javax.annotation.Nonnull;
@@ -64,7 +65,7 @@ public class CookieFunctions extends AbstractRequestFunction {
     public static final FunctionSignature FS_COOKIE_MAP = functionSignature(
             RequestModule.qname(FS_COOKIE_MAP_NAME),
             "Returns all cookies as a map. Each key is a cookie name, each value is the cookie value.",
-            returns(Type.MAP, "a map of cookie names to values")
+            returns(Type.MAP_ITEM, "a map of cookie names to values")
     );
 
     public CookieFunctions(final XQueryContext context, final FunctionSignature signature) {

@@ -23,6 +23,7 @@ package org.exist.xquery.modules.request;
 
 import org.exist.http.servlets.RequestWrapper;
 import org.exist.xquery.*;
+import org.exist.xquery.functions.map.MapType;
 import org.exist.xquery.value.*;
 
 import javax.annotation.Nonnull;
@@ -63,7 +64,7 @@ public class AttributeFunctions extends AbstractRequestFunction {
     public static final FunctionSignature FS_ATTRIBUTE_MAP = functionSignature(
             RequestModule.qname(FS_ATTRIBUTE_MAP_NAME),
             "Returns all request attributes as a map.",
-            returns(Type.MAP, "a map of attribute names to values")
+            returns(Type.MAP_ITEM, "a map of attribute names to values")
     );
 
     private static final String FS_SET_ATTRIBUTE_NAME = "set-attribute";

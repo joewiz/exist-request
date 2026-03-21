@@ -21,7 +21,7 @@
     <tag>http</tag>
     <category id="libs">Libraries</category>
 
-    <dependency processor="http://exist-db.org" semver-min="6.0.0"/>
+    <dependency processor="http://exist-db.org" semver-min="${exist.version}"/>
 
     <target>${package-abbrev}</target>
 
@@ -57,7 +57,7 @@
     </components>
 
     <changelog>
-        <change xmlns="http://exist-db.org/xquery/repo" version="1.0.0">
+        <change xmlns="http://exist-db.org/xquery/repo" version="0.9.0">
             <ul xmlns="http://www.w3.org/1999/xhtml">
                 <li>Initial release as standalone EXPath package</li>
                 <li>28 functions compatible with BaseX Request Module API</li>

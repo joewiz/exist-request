@@ -25,6 +25,7 @@ import org.exist.http.servlets.RequestWrapper;
 import org.exist.xquery.FunctionSignature;
 import org.exist.xquery.XPathException;
 import org.exist.xquery.XQueryContext;
+import org.exist.xquery.functions.map.MapType;
 import org.exist.xquery.value.*;
 
 import javax.annotation.Nonnull;
@@ -65,7 +66,7 @@ public class ParameterFunctions extends AbstractRequestFunction {
             RequestModule.qname(FS_PARAMETER_MAP_NAME),
             "Returns all query and form parameters as a map. Each key is a parameter name, " +
             "each value is one or more parameter values.",
-            returns(Type.MAP, "a map of parameter names to values")
+            returns(Type.MAP_ITEM, "a map of parameter names to values")
     );
 
     public ParameterFunctions(final XQueryContext context, final FunctionSignature signature) {
