@@ -41,10 +41,23 @@ jobs:
         run: mvn clean package -DskipTests -q
 
       # Deploy XAR in Container
+      # The Docker image's conf.xml registers a built-in exquery request module
+      # at the same namespace URI. We must remove it so our XAR module loads.
+      - name: Patch conf.xml to remove built-in exquery request module
+        run: |
+          id=$(docker create existdb/existdb:${{ matrix.exist-version }})
+          docker cp "$id:/exist/etc/conf.xml" /tmp/conf.xml
+          docker rm "$id"
+          # Remove the module registration for http://exquery.org/ns/request
+          sed -i '/<module.*http:\/\/exquery.org\/ns\/request/d' /tmp/conf.xml
+          echo "=== Patched conf.xml (exquery lines removed) ==="
+          grep -n "exquery" /tmp/conf.xml || echo "(no exquery lines remain)"
+
       - name: Start eXist-db container
         run: |
           docker run -dit -p 8080:8080 \
           -v ${{ github.workspace }}/target:/exist/autodeploy \
+          -v /tmp/conf.xml:/exist/etc/conf.xml \
           --name exist --rm --health-interval=1s --health-start-period=1s \
           existdb/existdb:${{ matrix.exist-version }}
 
