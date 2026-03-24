@@ -6,10 +6,17 @@ This module **coexists** with eXist's built-in request module (`http://exist-db.
 
 ## Install
 
-Download the `.xar` from CI build artifacts and install with the eXist-db Package Manager or the `xst` CLI:
+From a GitHub release:
 
 ```bash
-xst package install exist-request-0.9.0-SNAPSHOT.xar
+xst package install https://github.com/joewiz/exist-request/releases/download/v0.9.0-SNAPSHOT/exist-request-0.9.0-SNAPSHOT.xar
+```
+
+From a local build:
+
+```bash
+mvn package -DskipTests
+xst package install target/exist-request-0.9.0-SNAPSHOT.xar
 ```
 
 ## Coexistence with the built-in request module
