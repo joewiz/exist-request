@@ -91,7 +91,7 @@ public class RequestModule extends AbstractInternalModule {
     );
 
     public RequestModule(final Map<String, List<?>> parameters) {
-        super(functions, parameters, true);
+        super(functions, parameters);
     }
 
     @Override
